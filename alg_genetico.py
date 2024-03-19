@@ -1,5 +1,6 @@
 import math
 import random
+import copy
 
 def cria_populacao_inicial(npop:int) -> list :
     pop = list()
@@ -42,50 +43,45 @@ def avalia_populacao(npop:int, pop:list) -> list:
 
 def seleciona_pais(npop:int, fit:list, pop:list, num_pais:int) -> list:
     pais = []
-    pv = 0.9
-    cont = 0
-    pop_set = set()
-    for i in range(npop):
-        pop_set.add(i)
-    for i in range(npop):
-        if (cont == num_pais):
-            break
+    while len(pais) < num_pais:
         vencedor = 0
-        p1 = random.randrange(0, len(pop_set))
-        p2 = random.randrange(0, len(pop_set))
+        p1 = random.randrange(0, npop)
+        p2 = random.randrange(0, npop)
         while(pop[p1] == pop[p2]):
-            p2 = random.randrange(0, len(pop_set))
-        p1 = list(pop_set)[p1]
-        p2 = list(pop_set)[p2]
-        r = random.random()
+            p2 = random.randrange(0, npop)
         if(fit[p1] <= fit[p2]):
             vencedor = p1
-            if(r>pv):
-                vencedor = p2
         else:
             vencedor = p2
-            if(r>pv):
-                vencedor = p1
         pais.append(vencedor)
-        pop_set.discard(vencedor)
-        cont += 1
+
+        p1 = random.randrange(0, npop)
+        while(pop[p1] == pop[vencedor]):
+            p1 = random.randrange(0, npop)
+        p2 = random.randrange(0, npop)
+        while(pop[p2] == pop[vencedor]):
+            p2 = random.randrange(0, npop)
+        while(pop[p1] == pop[p2]):
+            p2 = random.randrange(0, npop)
+        if(fit[p1] <= fit[p2]):
+            vencedor = p1
+        else:
+            vencedor = p2
+        pais.append(vencedor)
     return pais
     
-def cruzamento(pais:list, pop:list) -> list:
+def cruzamento(pais:list, pop:list, pc:float) -> list:
     pop_intermediaria = []
     for p1, p2 in zip(*[iter(pais)]*2):
+        r1 = random.randint(0, 12)
         p1_end = pop[p2]
         p2_end = pop[p1]
-        p1_end[12:18] = pop[p1][12:18]
-        p2_end[12:18] = pop[p2][12:18]
-        p1_start = pop[p2]
-        p2_start = pop[p1]
-        p1_start[0:6] = pop[p1][0:6]
-        p2_start[0:6] = pop[p2][0:6]
+        r = random.random()
+        if(r<pc):
+            p1_end[r1:r1+6] = pop[p1][r1:r1+6]
+            p2_end[r1:r1+6] = pop[p2][r1:r1+6]
         pop_intermediaria.append(p1_end)
         pop_intermediaria.append(p2_end)
-        pop_intermediaria.append(p1_start)
-        pop_intermediaria.append(p2_start)
     return pop_intermediaria
 
 def mutacao(pop:list, pm:float) -> list:
@@ -103,28 +99,35 @@ def mutacao(pop:list, pm:float) -> list:
         pop_intermediaria.append(temp_inv)
     return pop_intermediaria
 
-def elitismo(pop:list, fit:list, nelite:int):
+def elitismo(pop:list, fit:list, nelite:int) -> list:
     elites = []
     sorted_list = sorted(fit, reverse=False)
-    maiores = sorted_list[0:nelite]
-    print(maiores)
-    for i in maiores:
-        pos = fit.index(i) # provavelmente onde esta o erro
-        elites.append(pop[pos])
+    melhores = []
+    for i in sorted_list:
+        if (len(melhores) == nelite):
+            break
+        if (i not in melhores):
+            melhores.append(i)
+    print(melhores)
+    for i in melhores:
+        for j in range(len(pop)):
+            if(fit[j] == i):
+                elites.append(pop[j])
+                break
     print()
     return elites
     
 
 npop = 100
-nger = 20
-nelite = 4
+nger = 15
+nelite = 2
+
 pop = []
 pop_intermediaria = []
-
 pais = []
 fit = []
 
-fc = 1.0
+pc = 1.0
 pm = 0.05
 
 pop = cria_populacao_inicial(npop)
@@ -133,11 +136,23 @@ geracoes = 0
 while(geracoes != nger):
     print("Geracao: ", geracoes)
     fit = avalia_populacao(npop, pop)
-    pais = seleciona_pais(npop, fit, pop, 48)
-    pop_intermediaria = cruzamento(pais, pop)
+
+    pais = seleciona_pais(npop, fit, pop, npop-nelite)
+    pop_intermediaria = cruzamento(pais, copy.deepcopy(pop), pc)
+
     pop_intermediaria = mutacao(pop_intermediaria, pm)
+
     nova_populacao = elitismo(pop, fit, nelite)
-    for i in pop_intermediaria:
-        nova_populacao.append(i)
+    nova_populacao.extend(pop_intermediaria)
     pop = nova_populacao
+
     geracoes += 1
+
+best_solution = sorted(fit, reverse=False)[0]
+pos = fit.index(best_solution)
+best_binary = pop[pos]
+print()
+print("Melhor: ", best_binary)
+x = representacao_populacao(-2, 2, best_binary)
+print(x)
+print("Fit: ", best_solution)
