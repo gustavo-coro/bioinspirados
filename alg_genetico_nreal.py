@@ -4,6 +4,7 @@ import random
 import copy
 import numpy
 import numpy.random as npr
+import sys
 
 def cria_populacao_inicial(x_min:int, x_max:int, npop:int, x_n:int) -> list :
     pop = list()
@@ -133,25 +134,28 @@ def elitismo(pop:list, fit:list, nelite:int) -> list:
     print()
     return elites
 
-def write_pop_in_archive(pop:list, fit:list, f:TextIOWrapper):
+def write_pop_in_archive(pop:list, fit:list, f:TextIOWrapper, geracao:int):
     sorted_list = sorted(fit, reverse=False)
     for i in range(len(pop)):
         pos = fit.index(sorted_list[i])
-        f.write("%lf, %lf, %lf -> %lf\n" %(pop[pos][0], pop[pos][1], pop[pos][2], sorted_list[i]))
+        f.write("%d;%lf;%lf;%lf;%lf\n" %(geracao, pop[pos][0], pop[pos][1], pop[pos][2], sorted_list[i]))
 
-def write_best_in_archive(pop:list, fit:list, f:TextIOWrapper):
+def write_best_in_archive(fit:list, f:TextIOWrapper):
     sorted_list = sorted(fit, reverse=False)
     melhor = sorted_list[0]
     pior = sorted_list[len(sorted_list) - 1]
-    media = numpy.average(sorted_list)
-    desvio = numpy.std(sorted_list)
-    f.write("%lf;%lf;%lf;%lf\n" %(melhor, pior, media, desvio))
+    f.write("%lf;%lf\n" %(melhor, pior))
     
 
-best_per_generation_file = open("best_per_generation.txt", "w")
-popualation_per_generation_file = open("popualation_per_generation.txt", "w")
+if len(sys.argv) != 3:
+    print("Erro na passagem de parâmetros!")
+    exit()
 
-best_per_generation_file.write("geracao;melhor;pior;media;desvio\n")
+best_per_generation_file = open(sys.argv[1], "w")
+popualation_per_generation_file = open(sys.argv[2], "w")
+
+best_per_generation_file.write("geracao;melhor;pior\n")
+popualation_per_generation_file.write("geracao;x1;x2;x3;fit\n")
 
 nger = 100
 # npop + nelite = par
@@ -182,9 +186,8 @@ while(geracoes != nger):
     fit = avalia_populacao(pop, x_n)
 
     best_per_generation_file.write("%d;" %(geracoes))
-    popualation_per_generation_file.write("\nGeracao: %d\n" %(geracoes))
-    write_best_in_archive(pop, fit, best_per_generation_file)
-    write_pop_in_archive(pop, fit, popualation_per_generation_file)
+    write_best_in_archive(fit, best_per_generation_file)
+    write_pop_in_archive(pop, fit, popualation_per_generation_file, geracoes)
 
     pais = seleciona_pais(npop, fit, pop, npop-nelite)
     pop_intermediaria = cruzamento_blx_alfa_beta(pais, copy.deepcopy(pop), pc, alfa, beta)
