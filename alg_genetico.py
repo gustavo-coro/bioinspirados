@@ -102,18 +102,11 @@ def mutacao(pop:list, pm:float) -> list:
 def elitismo(pop:list, fit:list, nelite:int) -> list:
     elites = []
     sorted_list = sorted(fit, reverse=False)
-    melhores = []
-    for i in sorted_list:
-        if (len(melhores) == nelite):
-            break
-        if (i not in melhores):
-            melhores.append(i)
+    melhores = sorted_list[0:nelite]
     print(melhores)
     for i in melhores:
-        for j in range(len(pop)):
-            if(fit[j] == i):
-                elites.append(pop[j])
-                break
+        pos = fit.index(i)
+        elites.append(pop[pos])
     print()
     return elites
     
