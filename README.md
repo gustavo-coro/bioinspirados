@@ -1,2 +1,2 @@
 # bioinspirados
-Trabalhos feitos na disciplina de algoritmos bioinspirados
+Trabalhos feitos na disciplina Algoritmos Bioinspirados - UFSJ 
