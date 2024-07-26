@@ -169,6 +169,10 @@ class AG:
         return sorted(self.solutions, key=lambda sol : sol.fitness)
 
     def run(self):
+
+        exit_file_path = sys.argv[8]
+        file =  open(exit_file_path, 'a+')
+
         best_solution = self.solutions[0]
         iteration = 0
         max_repeats = self.generations * 0.1
@@ -192,6 +196,14 @@ class AG:
             print(f"I = {iteration} | Melhor Fitness: {best_solution.fitness}") 
             iteration += 1
             iter_no_improvement += 1
+
+            media = np.mean(a=[f.fitness for f in best], dtype=int)
+            mediana = np.median([f.fitness for f in best])
+
+            file.write(f"{best[0].fitness};{best[-1].fitness};{media};{mediana}\n")
+
+        file.close()
+
 
 
 def create_graph_from_file(file_path) -> Graph:
@@ -217,7 +229,7 @@ num_elite = int(sys.argv[4])
 crossover_rate = float(sys.argv[5])
 mutation_rate = float(sys.argv[6])
 crossover_type = int(sys.argv[7])
-exit_file_path = sys.argv[8]
+
 
 graph = create_graph_from_file(file_path)
 
@@ -230,6 +242,3 @@ best = ag.return_sorted_solutions()
 print("Solução: ", best[0].solution)
 print("Fitness: ", best[0].fitness)
 
-with open(exit_file_path, 'a+') as file:
-    file.write(f"{best[0].fitness}\n")
-file.close()
