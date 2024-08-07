@@ -71,12 +71,12 @@ class AS:
         for j in remnant_cities:
             distance_ij = self.graph.distances[i][j]
             pheromone_ij = self.pheromone_matrix[i][j]
-            denominator += (pow(pheromone_ij, self.pheromone_acceptance) * pow(distance_ij, self.distance_acceptance))
+            denominator += (pow(pheromone_ij, self.pheromone_acceptance) * pow(1.0/distance_ij, self.distance_acceptance))
         
         for j in remnant_cities:
             distance_ij = self.graph.distances[i][j]
             pheromone_ij = self.pheromone_matrix[i][j]
-            numerator = (pow(pheromone_ij, self.pheromone_acceptance) * pow(distance_ij, self.distance_acceptance))
+            numerator = (pow(pheromone_ij, self.pheromone_acceptance) * pow(1.0/distance_ij, self.distance_acceptance))
             probability = numerator / denominator
             probabilities.append(probability)
         
@@ -120,6 +120,7 @@ class AS:
                     new_city = self.probabilistic_selection_function(self.ants[k].solution[index], remnant_cities)
                     self.ants[k].solution.append(new_city)
                     remnant_cities.remove(new_city)
+                    index += 1
 
                 self.ants[k].length = self.graph.calculate_length(self.ants[k].solution)
                 if (self.ants[k].length < self.best_ant.length):
@@ -151,11 +152,22 @@ def create_graph_from_file(file_path) -> Graph:
     return graph
 
 
+entry_file_src = sys.argv[1]
+iterations = int(sys.argv[2])
+alfa = float(sys.argv[3])
+beta = float(sys.argv[4])
+evaporation_rate = float(sys.argv[5])
+q = int(sys.argv[6])
+w = int(sys.argv[7])
+exit_file_src = sys.argv[8]
 
+graph = create_graph_from_file(entry_file_src)
 
-graph = create_graph_from_file("entradas/lau15_dist.txt")
-
-ant_system = AS(graph, graph.num_cities, 500, pow(10, -6), 1.0, 5.0, 0.5, 100, 5)
+ant_system = AS(graph, graph.num_cities, iterations, pow(10, -6), alfa, beta, evaporation_rate, q, w)
 ant_system.run()
 print("Best = ", ant_system.best_ant.solution)
 print("Length = ", ant_system.best_ant.length)
+
+exit_file = open(exit_file_src, "a+")
+exit_file.write(f"{ant_system.best_ant.length}\n")
+exit_file.close()
