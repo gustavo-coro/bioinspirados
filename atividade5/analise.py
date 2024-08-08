@@ -15,10 +15,12 @@ class Teste:
         self.media = np.mean(self.melhores)
         self.desvio = np.std(self.melhores)
 
+num_entry = "48"
+dir = "testes/att48_d/"
 testes = list()
 
-for i in range(1, 13):
-    file_path = f"testes/dantizig42_d/teste{i}.txt"
+for i in range(1, 6):
+    file_path = f"{dir}teste{i}.txt"
     iteracoes = np.loadtxt(file_path, delimiter=';', skiprows=0, max_rows=1, dtype=int)
     alfa = np.loadtxt(file_path, delimiter=';', skiprows=1, max_rows=1, dtype=float)
     beta = np.loadtxt(file_path, delimiter=';', skiprows=2, max_rows=1, dtype=float)
@@ -36,7 +38,7 @@ for teste in testes:
     t = [teste.iteracoes, teste.alfa, teste.beta, teste.taxa_evaporacao, teste.q, teste.w, "{:.2f}".format(teste.media), "{:.2f}".format(teste.desvio)]
     data.append(t)
 
-df = pd.DataFrame(data, columns=['Iterações', 'α', 'β', 'ρ', 'Q', 'W', 'Media', 'Desvio'])
+df = pd.DataFrame(data, columns=['Iterações', 'α', 'β', 'ρ', 'Q', 'W', 'Média', 'Desvio'])
 
 # Plot the table and save it as an image
 fig, ax = plt.subplots(figsize=(11, 6))  # set size frame
@@ -48,11 +50,11 @@ the_table = ax.table(cellText=df.values, colLabels=df.columns, cellLoc='center',
 the_table.auto_set_font_size(False)
 the_table.set_fontsize(8)
 
-plt.savefig("testes_table_42.png")
+plt.savefig(f"{dir}testestable{num_entry}.png")
 plt.show()
 
-'''
-data_melhor = np.loadtxt("testes/lau15_dist/arquivo_saida.txt", delimiter=';', skiprows=1, dtype=float)
+
+data_melhor = np.loadtxt(f"{dir}arquivo_saida.txt", delimiter=';', skiprows=1, dtype=float)
 
 y = [[],[],[],[]]
 for d in data_melhor:
@@ -68,9 +70,10 @@ plt.plot(y[3], label="Mediana")
 plt.xlabel("Geração")
 plt.ylabel("Aptidão")
 plt.legend()
+plt.savefig(f"{dir}analisemelhor{num_entry}.png")
 plt.show()
 
-execucoes_melhor = np.genfromtxt("testes/lau15_dist/teste_melhor.txt", delimiter=';', dtype=None)
+execucoes_melhor = np.genfromtxt(f"{dir}teste_melhor.txt", delimiter=';', dtype=None)
 
 gf_execucoes = plt.subplot()
 gf_execucoes.set_xlabel("Gerações")
@@ -81,4 +84,5 @@ for i in range(1,11):
     gf_execucoes.plot(ex, label=("Execução" + str(i)))
 
 plt.legend()
-plt.show()'''
+plt.savefig(f"{dir}execucoesmelhor{num_entry}.png")
+plt.show()

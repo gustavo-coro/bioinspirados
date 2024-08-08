@@ -2,14 +2,14 @@
 
 NUM_RUNS=10
 
-FILE_ENTRADA="dantizig42_d"
-DATA_FILE="testes/$FILE_ENTRADA/teste12.txt"
-ITERACOES=150
+FILE_ENTRADA="lau15_dist"
+DATA_FILE="testes/$FILE_ENTRADA/arquivo_saida.txt"
+ITERACOES=100
 ALFA=1.0
-BETA=4.0
-TAXA_EVAPORACAO=0.1
-Q=200
-W=14
+BETA=5.0
+TAXA_EVAPORACAO=0.5
+Q=100
+W=5
 
 # Create directory if it doesn't exist
 mkdir -p testes/$FILE_ENTRADA

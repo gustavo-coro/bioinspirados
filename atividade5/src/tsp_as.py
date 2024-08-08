@@ -105,6 +105,7 @@ class AS:
         print("")
 
     def run(self):
+
         iteration = 0
         while (iteration < self.iterations):
 
@@ -159,7 +160,6 @@ beta = float(sys.argv[4])
 evaporation_rate = float(sys.argv[5])
 q = int(sys.argv[6])
 w = int(sys.argv[7])
-exit_file_src = sys.argv[8]
 
 graph = create_graph_from_file(entry_file_src)
 
@@ -167,7 +167,3 @@ ant_system = AS(graph, graph.num_cities, iterations, pow(10, -6), alfa, beta, ev
 ant_system.run()
 print("Best = ", ant_system.best_ant.solution)
 print("Length = ", ant_system.best_ant.length)
-
-exit_file = open(exit_file_src, "a+")
-exit_file.write(f"{ant_system.best_ant.length}\n")
-exit_file.close()
