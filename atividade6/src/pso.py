@@ -33,7 +33,7 @@ class Pso:
         self.taxa_aprendizado_cognitiva = taxa_aprendizado_cognitiva
         self.taxa_aprendizado_social = taxa_aprendizado_social
         self.ponderacao_inercia = ponderacao_inercia
-        self.funcao_avaliacao = restrigin.RastriginFunction(self.numero_dimensoes)
+        self.funcao_avaliacao = rastrigin.RastriginFunction(self.numero_dimensoes)
 
         self.particulas = []
 
