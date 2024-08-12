@@ -2,7 +2,7 @@ import random
 import numpy
 import numpy.random as npr
 import sys
-import restrigin
+import rastrigin
 import copy
     
 class Particula:
