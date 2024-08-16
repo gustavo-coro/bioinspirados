@@ -26,14 +26,16 @@ class Particula:
         self.velocidade = nova_velocidade
 
 class Pso:
-    def __init__(self, numero_particulas:int, numero_dimensoes:int, iteracoes:int, taxa_aprendizado_cognitiva:float, taxa_aprendizado_social:float, ponderacao_inercia:float):
+    def __init__(self, numero_particulas:int, numero_dimensoes:int, iteracoes:int, max_iter_without_change:int, taxa_aprendizado_cognitiva:float, taxa_aprendizado_social:float, ponderacao_inercia:float, escolhe_topologia:int = 0):
         self.numero_particulas = numero_particulas
         self.numero_dimensoes = numero_dimensoes
         self.iteracoes = iteracoes
+        self.max_iter_without_change = max_iter_without_change
         self.taxa_aprendizado_cognitiva = taxa_aprendizado_cognitiva
         self.taxa_aprendizado_social = taxa_aprendizado_social
         self.ponderacao_inercia = ponderacao_inercia
         self.funcao_avaliacao = rastrigin.RastriginFunction(self.numero_dimensoes)
+        self.escolhe_topologia = escolhe_topologia
 
         self.particulas = []
 
@@ -48,30 +50,27 @@ class Pso:
     def get_melhor_global(self) -> Particula:
         return self.melhor_global
     
-    def atualiza_velocidade(self, particula:Particula):
+    def atualiza_velocidade(self, particula:Particula, coordenadas_melhor_vizinho:list):
         for j in range(self.numero_dimensoes):
             r1 = random.random()
             r2 = random.random()
 
             particula.velocidade[j] = self.ponderacao_inercia * particula.velocidade[j]
 
-            # duvida sobre o pi TODO:
             particula.velocidade[j] += self.taxa_aprendizado_cognitiva * r1 * (particula.coordenadas_melhor[j] - particula.coordenadas[j])
-            particula.velocidade[j] += self.taxa_aprendizado_social * r2 * (self.melhor_global.coordenadas[j] - particula.coordenadas[j])
+            particula.velocidade[j] += self.taxa_aprendizado_social * r2 * (coordenadas_melhor_vizinho[j] - particula.coordenadas[j])
+
     
     def atualiza_posicao(self, particula:Particula):
         for j in range(self.numero_dimensoes):
             particula.coordenadas[j] = particula.coordenadas[j] + particula.velocidade[j]
-            if (particula.coordenadas[j] > self.funcao_avaliacao.max_bound):
-                particula.coordenadas[j] = self.funcao_avaliacao.max_bound
-            elif (particula.coordenadas[j] < self.funcao_avaliacao.min_bound):
-                particula.coordenadas[j] = self.funcao_avaliacao.min_bound
+            particula.coordenadas[j] = max(self.funcao_avaliacao.min_bound, min(self.funcao_avaliacao.max_bound, particula.coordenadas[j]))
 
     def rodar_algoritmo(self):
 
         iter_without_change = 0
         for iteracao in range(self.iteracoes):
-            if (iter_without_change > 350):
+            if (iter_without_change > self.max_iter_without_change):
                 break
             for i in range(self.numero_particulas):
 
@@ -87,7 +86,20 @@ class Pso:
 
                         iter_without_change = 0
 
-                self.atualiza_velocidade(self.particulas[i])
+                if (self.escolhe_topologia == 0):
+                    self.atualiza_velocidade(self.particulas[i], self.melhor_global.coordenadas_melhor)
+                else:
+                    anterior = i - 1
+                    proximo = i + 1
+
+                    if (i == (len(self.particulas) - 1)):
+                        proximo = 0
+
+                    if (self.particulas[anterior].aptidao_melhor <= self.particulas[proximo].aptidao_melhor):
+                        self.atualiza_velocidade(self.particulas[i], self.particulas[anterior].coordenadas_melhor)
+                    else:
+                        self.atualiza_velocidade(self.particulas[i], self.particulas[proximo].coordenadas_melhor)
+    
                 self.atualiza_posicao(self.particulas[i])
                 self.particulas[i].aptidao = self.funcao_avaliacao.evaluate_solution(self.particulas[i].coordenadas)
             
@@ -95,14 +107,18 @@ class Pso:
             iter_without_change += 1
                 
 
-iteracoes = 50000
-numero_particulas = 500
-numero_dimensoes = 5
-taxa_aprendizado_cognitiva = 0.8
-taxa_aprendizado_social = 3.1
-ponderacao_inercia = 0.03
+iteracoes = int(sys.argv[1])
+max_iter_without_change = 1000
+numero_particulas = int(sys.argv[2])
+numero_dimensoes = int(sys.argv[3])
+taxa_aprendizado_cognitiva = float(sys.argv[4])
+taxa_aprendizado_social = float(sys.argv[5])
+ponderacao_inercia = float(sys.argv[6])
+escolhe_topologia = int(sys.argv[7])
 
-pso = Pso(numero_particulas, numero_dimensoes, iteracoes, taxa_aprendizado_cognitiva, taxa_aprendizado_social, ponderacao_inercia)
+
+pso = Pso(numero_particulas, numero_dimensoes, iteracoes, max_iter_without_change, taxa_aprendizado_cognitiva, taxa_aprendizado_social, ponderacao_inercia, escolhe_topologia)
 pso.rodar_algoritmo()
 print("Melhor = ", pso.get_melhor_global().coordenadas_melhor)
 print("Avaliação = ", pso.get_melhor_global().aptidao_melhor)
+

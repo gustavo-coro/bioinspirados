@@ -12,7 +12,7 @@ class RastriginFunction:
                 for _ in range(self.dimension)]
 
     def evaluate_solution(self, x) -> float:
-        d = len(x)
+        d = self.dimension
         sum = 0
         for i in range(d):
             x_i = x[i]
