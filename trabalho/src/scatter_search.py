@@ -1,6 +1,7 @@
 import numpy as np
 import numpy.random as npr
 import random
+import itertools
 import sys
 
 class Graph:
@@ -25,6 +26,12 @@ class Individual:
         self.solution = solution
         self.fitness = fitness
 
+    def __eq__(self, other): 
+        if not isinstance(other, Individual):
+            return NotImplemented
+
+        return [a == b for a, b in zip(self.solution, other.solution)] and self.fitness == other.fitness
+
     
 class SS:
     def __init__(self, graph:Graph, s:int, b1:int, b2:int, alfa:float):
@@ -34,8 +41,8 @@ class SS:
         self.b2 = b2
         self.b = b1 + b2
         self.alfa = alfa
-        self.initial_set = []
-        self.ref_set = []
+        self.initial_set = self.generate_initial_set()
+        self.ref_set = self.ref_set_create()
 
     def get_distances_from_cities_in_lrc(self, last_city, lrc):
         return [self.graph.distances[last_city][city] for city in lrc]
@@ -52,7 +59,7 @@ class SS:
 
         while len(sol) < self.graph.num_cities:
             last_city = sol[-1]
-            distances = self.get_distances_from_cities_in_lrc(last_city, self.graph.distances, lrc)
+            distances = self.get_distances_from_cities_in_lrc(last_city, lrc)
 
             min_distance = min(distances)
             max_distance = max(distances)
@@ -98,70 +105,129 @@ class SS:
                 improv = False
 
         return s
+    
+    def generate_initial_set(self) -> list:
+        initial_set = list()
+        while(len(initial_set) < self.s):
+            idv = self.random_greedy_solution()
+            initial_set.append(self.local_search(idv))
+        
+        return initial_set
+    
+    def num_differing_edges(self, tour1:list, tour2:list) -> int:
+        n = len(tour1)
+
+        edges_tour1 = {(tour1[i], tour1[(i + 1) % n]) for i in range(n)}
+        edges_tour2 = {(tour2[i], tour2[(i + 1) % n]) for i in range(n)}
+
+        differing_edges = edges_tour1.symmetric_difference(edges_tour2)
+
+        return len(differing_edges) // 2
 
     
-    def ref_set_update(self) -> list:
-        # code
-        print("")
+    def ref_set_create(self) -> list:
+        self.initial_set.sort(key=lambda x: (x.fitness))
 
-    def ox_crossover(self, parents:list) -> list:
-        offspring = list()
-        offspring_number = 0
-        iterations = (self.pop_size - self.num_elite)
-        if (iterations % 2 != 0):
-            iterations += 1
-        while (offspring_number < iterations):
-            r = npr.rand()
-            if (r > self.crossover_rate):
-                offspring.append(parents[offspring_number])
-                offspring.append(parents[offspring_number + 1])
-                offspring_number = offspring_number + 2
-                continue
+        ref_set = self.initial_set[:self.b1]
+        del self.initial_set[:self.b1]
 
-            f_parent = parents[offspring_number].solution
-            s_parent = parents[offspring_number + 1].solution
+        while (len(ref_set) < self.b):
+            idx_most_dif_edges = 0
+            most_dif_edges = 0
+            
+            for i in range(len(self.initial_set)):
+                for sol in ref_set:
+                    dif_edges = self.num_differing_edges(self.initial_set[i].solution, sol.solution)
 
-            f_child = [-1] * self.graph.num_cities
-            s_child = [-1] * self.graph.num_cities
+                    if (dif_edges > most_dif_edges):
+                        most_dif_edges = dif_edges
+                        idx_most_dif_edges = i
+
+            ref_set.append(self.initial_set[idx_most_dif_edges])
+            self.initial_set.remove(self.initial_set[idx_most_dif_edges])
+
+        return ref_set 
+
+    def generate_subsets(self) -> list:
+        sub_sets = list(itertools.combinations(self.ref_set, 2))
+        
+        return sub_sets
+
+    def ox(self, sub_sets:list) -> list:
+        solutions = list()
+
+        for pair in sub_sets:
+            f_solution = pair[0].solution
+            s_solution = pair[1].solution
+
+            f_new_solution = [-1] * self.graph.num_cities
+            s_new_solution = [-1] * self.graph.num_cities
 
             f_point = random.randint(0, self.graph.num_cities - 1)
             s_point = random.randint(f_point, self.graph.num_cities - 1)
             for i in range(f_point, s_point):
-                f_child[i] = f_parent[i]
-                s_child[i] = s_parent[i]
+                f_new_solution[i] = f_solution[i]
+                s_new_solution[i] = s_solution[i]
 
             remaining_positions = [i for i in range(self.graph.num_cities) if i not in range(f_point, s_point)]
 
-            s_parent_index = 0
+            s_solution_index = 0
             for i in remaining_positions:
-                while s_parent[s_parent_index] in f_child:
-                    s_parent_index = (s_parent_index + 1) % self.graph.num_cities
-                f_child[i] = s_parent[s_parent_index]
-                s_parent_index = (s_parent_index + 1) % self.graph.num_cities
+                while s_solution[s_solution_index] in f_new_solution:
+                    s_solution_index = (s_solution_index + 1) % self.graph.num_cities
+                f_new_solution[i] = s_solution[s_solution_index]
+                s_solution_index = (s_solution_index + 1) % self.graph.num_cities
 
-            offspring.append(Individual(f_child, self.graph.calculate_fitness(f_child)))
+            solutions.append(Individual(f_new_solution, self.graph.calculate_fitness(f_new_solution)))
 
-            f_parent_index = 0
+            f_solution_index = 0
             for i in remaining_positions:
-                while f_parent[f_parent_index] in s_child:
-                    f_parent_index = (f_parent_index + 1) % self.graph.num_cities
-                s_child[i] = f_parent[f_parent_index]
-                f_parent_index = (f_parent_index + 1) % self.graph.num_cities
+                while f_solution[f_solution_index] in s_new_solution:
+                    f_solution_index = (f_solution_index + 1) % self.graph.num_cities
+                s_new_solution[i] = f_solution[f_solution_index]
+                f_solution_index = (f_solution_index + 1) % self.graph.num_cities
 
-            offspring.append(Individual(s_child, self.graph.calculate_fitness(s_child)))
+            solutions.append(Individual(s_new_solution, self.graph.calculate_fitness(s_new_solution)))
 
-            offspring_number = offspring_number + 2
-
-        return offspring
-
-    def return_sorted_solutions(self) -> list:
-        return sorted(self.solutions, key=lambda sol : sol.fitness)
+        return solutions
 
     def run(self):
+        new_solutions = True
 
-        
+        while(new_solutions):
+            print(self.ref_set[0].fitness)
+
+            sub_sets = self.generate_subsets()
+            solutions = self.ox(sub_sets)
+
+            for i, s in enumerate(solutions):
+                solutions[i] = self.local_search(s)
+
+            solutions.extend(self.ref_set)
+
+            unique_solutions = []
+            seen_solutions = set()
+
+            for s in solutions:
+                solution_tuple = tuple(s.solution)
+                if solution_tuple not in seen_solutions:
+                    unique_solutions.append(s)
+                    seen_solutions.add(solution_tuple)
+
+            unique_solutions.sort(key=lambda x: x.fitness)
+            unique_solutions = unique_solutions[:self.b]
+
+            new_solutions = False
+
+            for i in range(self.b):
+                if (self.ref_set[i] != unique_solutions[i]):
+                    new_solutions = True
+                    break
+
+            if (new_solutions):
+                self.ref_set = unique_solutions
+                
         return self.ref_set
-
 
 
 def create_graph_from_file(file_path) -> Graph:
@@ -185,3 +251,11 @@ if __name__ == "__main__":
     file_path = sys.argv[1]
 
     graph = create_graph_from_file(file_path)
+
+    ss = SS(graph=graph, s=40, b1=5, b2=5, alfa=0.03)
+
+    ss.run()
+
+    print("Melhor:")
+    print(ss.ref_set[0].solution)
+    print(ss.ref_set[0].fitness)
